@@ -32,19 +32,39 @@ def handle_query(user_query: str, wardrobe_choice: str) -> tuple[str, str, str]:
         A tuple of three strings:
             (listing_text, outfit_suggestion, fit_card)
         Each string maps to one of the three output panels in the UI.
-
-    TODO:
-        1. Guard against an empty query (return early with an error message).
-        2. Select the wardrobe based on wardrobe_choice.
-        3. Call run_agent() with the query and selected wardrobe.
-        4. If session["error"] is set, return the error in the first panel
-           and empty strings for the other two.
-        5. Otherwise, format session["selected_item"] into a readable listing_text
-           string and return it along with session["outfit_suggestion"] and
-           session["fit_card"].
     """
-    # TODO: implement this function
-    return "Agent not yet implemented.", "", ""
+    # Step 1 — guard against empty query
+    if not user_query or not user_query.strip():
+        return "Please enter a search query to get started.", "", ""
+
+    # Step 2 — select wardrobe
+    if wardrobe_choice == "Empty wardrobe (new user)":
+        wardrobe = get_empty_wardrobe()
+    else:
+        wardrobe = get_example_wardrobe()
+
+    # Step 3 — run agent
+    session = run_agent(user_query.strip(), wardrobe)
+
+    # Step 4 — handle error path
+    if session.get("error"):
+        return session["error"], "", ""
+
+    # Step 5 — format the selected item into a readable string
+    item = session["selected_item"]
+    tags = ", ".join(item.get("style_tags", []))
+    colors = ", ".join(item.get("colors", []))
+    brand = item.get("brand") or "Unknown brand"
+    listing_text = (
+        f"{item['title']}\n"
+        f"${item['price']:.2f}  |  Size: {item['size']}  |  Condition: {item['condition']}\n"
+        f"Platform: {item['platform'].capitalize()}  |  Brand: {brand}\n"
+        f"\n{item['description']}\n"
+        f"\nStyle tags: {tags}\n"
+        f"Colors: {colors}"
+    )
+
+    return listing_text, session["outfit_suggestion"], session["fit_card"]
 
 
 # ── interface ─────────────────────────────────────────────────────────────────
